@@ -10,7 +10,7 @@ library(plotly)
 
 # Load Data ---------------------------------------------------------------
 
-clean_tracking <- read_csv("Desktop/PMC Github/Tracking Data/data/clean_tracking.csv")
+clean_tracking <- read_csv("clean_tracking.csv")
 
 clean_tracking
 
