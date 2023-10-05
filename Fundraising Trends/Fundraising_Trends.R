@@ -35,13 +35,13 @@ first_rides <- Num_YR_riding %>%
   mutate(past_years = 0)
 
 # Combine both datasets and then compute the average past years ridden by year.
-results <- bind_rows(past_rides, first_rides) %>%
+median_mean_rides_per_year <- bind_rows(past_rides, first_rides) %>%
   group_by(EventYear.x) %>%
   summarise(average_years_ridden = mean(past_years, na.rm = TRUE),
             median_years_ridden = median(past_years, na.rm = TRUE)) %>%
   rename(EventYear = EventYear.x)
 
-median_mean_rides_per_year <- results
+
 
 
 
@@ -71,13 +71,13 @@ first_rides_2plus <- Num_YR_riding_Greater2 %>%
   mutate(past_years = 0)
 
 # Combine both datasets and then compute the average past years ridden by year.
-results_2plus <- bind_rows(past_rides_2Plus, first_rides_2plus) %>%
+median_mean_rides_per_year_2plus <- bind_rows(past_rides_2Plus, first_rides_2plus) %>%
   group_by(EventYear.x) %>%
   summarise(average_years_ridden = mean(past_years, na.rm = TRUE),
             median_years_ridden = median(past_years, na.rm = TRUE)) %>%
   rename(EventYear = EventYear.x)
 
-median_mean_rides_per_year_2plus <- results_2plus
+
 
 #Prints exactly same output, but for 3 it prints different results. Lets me know that function is correct. Why is this so?
 
@@ -99,14 +99,14 @@ lifetime_funds <- Total_Fundraising %>%
   ungroup()
 
 # Calculate average and median lifetime fundraising by year
-results_fundraising <- lifetime_funds %>%
+median_mean_Totalfundraised_per_year  <- lifetime_funds %>%
   group_by(EventYear) %>%
   summarise(
     average_lifetime_fundraising = mean(cumulative_funds, na.rm = TRUE),
     median_lifetime_fundraising = median(cumulative_funds, na.rm = TRUE)
   )
 
-median_mean_Totalfundraised_per_year <- results_fundraising
+
 
 
 # Question 4 --------------------------------------------------------------
@@ -131,26 +131,25 @@ lifetime_funds2Plus <- Total_Fundraising2Plus %>%
   ungroup()
 
 # Calculate average and median lifetime fundraising by year
-results_fundraising2Plus <- lifetime_funds2Plus %>%
+median_mean_Totalfundraised_per_year_2plus <- lifetime_funds2Plus %>%
   group_by(EventYear) %>%
   summarise(
     average_lifetime_fundraising = mean(cumulative_funds, na.rm = TRUE),
     median_lifetime_fundraising = median(cumulative_funds, na.rm = TRUE)
   )
 
-median_mean_Totalfundraised_per_year_2plus <- results_fundraising2Plus
 
 lifetime_funds_selectedYear <- lifetime_funds %>% 
   filter(EventYear == 1988)
 
 
-# 3+ Riding and Fundraising -----------------------------------------------
+# 3+  Fundraising -----------------------------------------------
 Total_Fundraising3Plus <- tblMain %>% 
   filter(Participant == 1) %>% 
   filter(EventName == "PMC") %>% 
   select(Main_ID, EventYear, Collected) %>% 
   group_by(Main_ID) %>% 
-  filter(n()>=2)
+  filter(n()>=3)
 
 
 # Calculate lifetime fundraising total for each rider by year
@@ -161,14 +160,47 @@ lifetime_funds3Plus <- Total_Fundraising3Plus %>%
   ungroup()
 
 # Calculate average and median lifetime fundraising by year
-results_fundraising3Plus <- lifetime_funds3Plus %>%
+median_mean_Totalfundraised_per_year_3Plus <- lifetime_funds3Plus %>%
   group_by(EventYear) %>%
   summarise(
     average_lifetime_fundraising = mean(cumulative_funds, na.rm = TRUE),
     median_lifetime_fundraising = median(cumulative_funds, na.rm = TRUE)
+    
   )
 
-median_mean_Totalfundraised_per_year_3Plus <- results_fundraising3Plus
+
+# 3 Plus Riding -----------------------------------------------------------
+
+
+Num_YR_riding_Greater3 <- tblMain %>%
+  filter(Participant == 1) %>%
+  filter(EventName == "PMC") %>%
+  select(Main_ID, EventYear, Collected) %>% 
+  group_by(Main_ID) %>% 
+  filter(n()>=3)  #shows up more than 2 times aka rode +2 times
+
+#Same process
+
+past_rides_Greater3 <- Num_YR_riding_Greater3 %>%
+  left_join(Num_YR_riding_Greater3, by = "Main_ID") %>%
+  filter(EventYear.x > EventYear.y) %>%
+  group_by(Main_ID, EventYear.x) %>%
+  summarise(past_years = n()) %>%
+  ungroup()
+
+# So we need to ensure those riders are accounted for with a value of 0 for past_years.
+first_rides_Greater3 <- Num_YR_riding_Greater3 %>%
+  anti_join(past_rides_Greater3, by = c("Main_ID", "EventYear" = "EventYear.x")) %>%
+  mutate(past_years = 0)
+
+# Combine both datasets and then compute the average past years ridden by year.
+median_mean_rides_per_year_Greater3 <- bind_rows(past_rides_Greater3, first_rides_Greater3) %>%
+  group_by(EventYear.x) %>%
+  summarise(average_years_ridden = mean(past_years, na.rm = TRUE),
+            median_years_ridden = median(past_years, na.rm = TRUE)) %>%
+  rename(EventYear = EventYear.x)
+
+
 
 
 
