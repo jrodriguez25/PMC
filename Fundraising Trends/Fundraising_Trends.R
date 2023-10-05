@@ -1,5 +1,9 @@
 library(tidyverse)
 library(readxl)
+library(ggthemes)
+library(ggplot2)
+library(patchwork)
+
 rm(list = ls())
 
 tblMain <- read_excel("~/GitHub/PMC/median_mean_info/tblMain.xlsx")
@@ -204,3 +208,44 @@ median_mean_rides_per_year_Greater3 <- bind_rows(past_rides_Greater3, first_ride
 
 
 
+# Visualize ---------------------------------------------------------------
+
+fundraising <- ggplot(median_mean_Totalfundraised_per_year, aes(EventYear, median_lifetime_fundraising))+
+  geom_line()
+
+fundraising_2plus <- ggplot(median_mean_Totalfundraised_per_year_2plus, aes(EventYear, median_lifetime_fundraising))+
+  geom_line()
+
+fundraising_3plus <- ggplot(median_mean_Totalfundraised_per_year_3Plus, aes(EventYear, median_lifetime_fundraising))+
+  geom_line()
+
+
+
+fundriasing_overall_list <- list(median_mean_Totalfundraised_per_year, median_mean_Totalfundraised_per_year_2plus, median_mean_Totalfundraised_per_year_3Plus)
+
+fundriasing_overall_list <- fundriasing_overall_list %>% reduce(full_join, by ="EventYear")
+
+fundriasing_overall_list <- fundriasing_overall_list %>% 
+  rename(median_overall = median_lifetime_fundraising.x,
+         median_2plus = median_lifetime_fundraising.y,
+         median_3plus = median_lifetime_fundraising)
+
+fundraising_long <- fundriasing_overall_list %>% 
+  gather(key = "Category", value = "Median_value", -EventYear ) %>% 
+  filter(Category != "average_lifetime_fundraising.x") %>% 
+  filter(Category != "average_lifetime_fundraising.y") %>% 
+  filter(Category != "average_lifetime_fundraising")
+
+
+plot_fundraising <- ggplot(fundraising_long, aes(x = EventYear, y =Median_value, color = Category))+
+  geom_line() +
+  labs(
+    title = "Comparison of Median Fundraised across Categories",
+    x = "Event Year",
+    y = "Median Fundraised",
+    color = "Category"
+  ) +
+  scale_color_discrete(labels=c("2+ year Rider", "3+ Year Rider", "All Riders"))+
+  theme_few()
+
+plot_fundraising
