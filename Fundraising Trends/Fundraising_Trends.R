@@ -9,6 +9,14 @@ rm(list = ls())
 tblMain <- read_excel("~/GitHub/PMC/median_mean_info/tblMain.xlsx")
 
 
+# Number of People Riding -------------------------------------------------
+
+Num_riders_per_year <- tblMain %>% 
+  filter(Participant == 1)
+  group_by(EventYear) %>% 
+  summarize(riders =n())
+
+
 # Question 1  -------------------------------------------------------------
 
 #What is the median AND mean (avg) number of years riding of all riders since 1980 by year
@@ -238,7 +246,7 @@ fundraising_long <- fundriasing_overall_list %>%
 
 
 plot_fundraising <- ggplot(fundraising_long, aes(x = EventYear, y =Median_value, color = Category))+
-  geom_line() +
+  geom_line(size =2) +
   labs(
     title = "Comparison of Median Fundraised across Categories",
     x = "Event Year",
