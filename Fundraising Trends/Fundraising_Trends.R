@@ -4,17 +4,10 @@ library(ggthemes)
 library(ggplot2)
 library(patchwork)
 
-rm(list = ls())
 
-tblMain <- read_excel("~/GitHub/PMC/median_mean_info/tblMain.xlsx")
+tblMain <- read_excel("~/Desktop/PMC Github/median_mean_info/tblMain.xlsx")
 
 
-# Number of People Riding -------------------------------------------------
-
-Num_riders_per_year <- tblMain %>% 
-  filter(Participant == 1)
-  group_by(EventYear) %>% 
-  summarize(riders =n())
 
 
 # Question 1  -------------------------------------------------------------
@@ -213,11 +206,91 @@ median_mean_rides_per_year_Greater3 <- bind_rows(past_rides_Greater3, first_ride
   rename(EventYear = EventYear.x)
 
 
+# Number of People Riding -------------------------------------------------
+
+Num_riders_per_year <- tblMain %>% 
+  filter(Participant == 1) %>%
+  filter(EventName == "PMC") %>% 
+  group_by(EventYear) %>% 
+  summarize(riders =n())
+
+Amount_fundraised_YR <- tblMain %>% 
+  filter(Participant == 1) %>% 
+  filter(EventName == "PMC") %>% 
+  group_by(EventYear) %>% 
+  summarize(total_amount_collected = sum(Raised))
+
+clean_table <- Num_riders_per_year %>% left_join(fundraising_long, by = "EventYear")
 
 
+
+
+# Percentage Raised above the minimum -------------------------------------
+
+pct_above_minimum <- tblMain %>% 
+  filter(Participant == 1) %>% 
+  filter(EventName == "PMC") %>% 
+  select(Main_ID, EventYear, Collected,Raised, MinFund, Commitment) %>% 
+  filter(EventName == "PMC") %>% 
+  mutate(pct_above_raised = ((Raised-Commitment)/ Commitment) *100)
+
+
+#Need to clean this more
+stats_pct_above_minimum <- pct_above_minimum %>% 
+  group_by(EventYear) %>%
+  summarise(
+    average_percent_abv_raised = mean(pct_above_raised, na.rm = TRUE),
+    median_percent_abv_raised = median(pct_above_raised, na.rm = TRUE)
+  )
+
+#Maybe start thinking of certain routes and certain cohorts of riders
+
+mark_OnD <- tblMain %>% 
+  filter(Participant == 1) %>% 
+  filter(EventName == "PMC") %>% 
+  group_by(Main_ID) %>% 
+  mutate(appear_count = n()) %>% 
+  ungroup() %>% 
+  mutate(One_Timer = ifelse(appear_count == 1, "Yes", "No")) %>% 
+  select(Main_ID, EventYear, Collected, Raised, MinFund, Commitment, One_Timer)
+
+
+pct_above_minimum <-bind_rows(pct_above_minimum, mark_OnD)
+
+pct_above_minimum_OND<- pct_above_minimum %>% 
+  filter(One_Timer == "Yes")
+
+
+  
+  
+# One and Dones -----------------------------------------------------------
+
+One_and_Dones <-tblMain %>% 
+  filter(Participant == 1) %>% 
+  filter(EventName == "PMC") %>% 
+  group_by(Main_ID) %>%
+  filter(n() == 1) %>% 
+  group_by(EventYear) %>% 
+  summarize(count =n())
+
+OnD_graph <- ggplot(One_and_Dones, aes(x = EventYear, y= count))+
+  geom_bar(stat = "identity", fill = 'darkred') +theme_linedraw() +
+  labs(x = "Year", y = "Number of Riders", title = "Number of One and Dones each Year")
+
+OnD_graph
+
+
+
+# Regression Model -------------------------------------------------------------------
+
+model <- lm(Median_value ~ riders, data = clean_table)
+
+summary(model)
 
 # Visualize ---------------------------------------------------------------
 
+
+#Comparison of Median Fundraised Across Categories
 fundraising <- ggplot(median_mean_Totalfundraised_per_year, aes(EventYear, median_lifetime_fundraising))+
   geom_line()
 
@@ -246,7 +319,7 @@ fundraising_long <- fundriasing_overall_list %>%
 
 
 plot_fundraising <- ggplot(fundraising_long, aes(x = EventYear, y =Median_value, color = Category))+
-  geom_line(size =2) +
+  geom_line(size =1) +
   labs(
     title = "Comparison of Median Fundraised across Categories",
     x = "Event Year",
@@ -257,3 +330,30 @@ plot_fundraising <- ggplot(fundraising_long, aes(x = EventYear, y =Median_value,
   theme_few()
 
 plot_fundraising
+
+#Comparison of Number of Riders and Total Fundraised
+
+Amount_fundraised_YR <- Amount_fundraised_YR %>% left_join(Num_riders_per_year, by = "EventYear")
+
+riders<- ggplot(Amount_fundraised_YR, aes(x = EventYear, y =riders )) +
+  geom_bar(stat = "identity", fill = "skyblue")+
+  labs(x = "Year", y = "Riders", title = "Number of Riders Each Year")+
+  theme_few()
+
+fundraising <- ggplot(Amount_fundraised_YR, aes(x= EventYear )) +
+  geom_line(aes(y =total_amount_collected), size = 1) +
+  scale_y_continuous(labels = dollar)+
+  labs(x = "Year", y = "Amount Raised", title = "Total Raised Each Year" )
+  
+fundraising
+
+riders
+  
+riders + inset_element(fundraising,
+                       left = 0.4,
+                       bottom = 0.4,
+                       right = unit(1, "npc") - unit(15, "mm"),
+                       top = unit(1, "npc") - unit(14, "mm"), 
+                       align_to = "full")
+
+
