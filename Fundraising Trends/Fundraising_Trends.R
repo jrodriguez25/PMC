@@ -3,10 +3,10 @@ library(readxl)
 library(ggthemes)
 library(ggplot2)
 library(patchwork)
+library(scales)
 
 
-tblMain <- read_excel("~/Desktop/PMC Github/median_mean_info/tblMain.xlsx")
-
+tblMain <- read_excel("~/Desktop/PMC Github/median_mean_info/tblHistory.xlsx")
 
 
 
@@ -218,9 +218,8 @@ Amount_fundraised_YR <- tblMain %>%
   filter(Participant == 1) %>% 
   filter(EventName == "PMC") %>% 
   group_by(EventYear) %>% 
-  summarize(total_amount_collected = sum(Raised))
+  summarize(total_amount_collected = sum(Collected))
 
-clean_table <- Num_riders_per_year %>% left_join(fundraising_long, by = "EventYear")
 
 
 
@@ -231,7 +230,6 @@ pct_above_minimum <- tblMain %>%
   filter(Participant == 1) %>% 
   filter(EventName == "PMC") %>% 
   select(Main_ID, EventYear, Collected,Raised, MinFund, Commitment) %>% 
-  filter(EventName == "PMC") %>% 
   mutate(pct_above_raised = ((Raised-Commitment)/ Commitment) *100)
 
 
@@ -255,7 +253,7 @@ mark_OnD <- tblMain %>%
   select(Main_ID, EventYear, Collected, Raised, MinFund, Commitment, One_Timer)
 
 
-pct_above_minimum <-bind_rows(pct_above_minimum, mark_OnD)
+pct_above_minimum <-bind_rows(pct_above_minimum,  mark_OnD)
 
 pct_above_minimum_OND<- pct_above_minimum %>% 
   filter(One_Timer == "Yes")
@@ -281,11 +279,7 @@ OnD_graph
 
 
 
-# Regression Model -------------------------------------------------------------------
 
-model <- lm(Median_value ~ riders, data = clean_table)
-
-summary(model)
 
 # Visualize ---------------------------------------------------------------
 
@@ -299,8 +293,6 @@ fundraising_2plus <- ggplot(median_mean_Totalfundraised_per_year_2plus, aes(Even
 
 fundraising_3plus <- ggplot(median_mean_Totalfundraised_per_year_3Plus, aes(EventYear, median_lifetime_fundraising))+
   geom_line()
-
-
 
 fundriasing_overall_list <- list(median_mean_Totalfundraised_per_year, median_mean_Totalfundraised_per_year_2plus, median_mean_Totalfundraised_per_year_3Plus)
 
@@ -317,6 +309,17 @@ fundraising_long <- fundriasing_overall_list %>%
   filter(Category != "average_lifetime_fundraising.y") %>% 
   filter(Category != "average_lifetime_fundraising")
 
+clean_table <- Num_riders_per_year %>% left_join(fundraising_long, by = "EventYear")
+# Correlation rider & fundraising amount -------------------------------------------------------------------
+
+model <- lm(Median_value ~ riders, data = clean_table)
+
+summary(model)
+
+
+# Visualizations  ---------------------------------------------------------
+
+
 
 plot_fundraising <- ggplot(fundraising_long, aes(x = EventYear, y =Median_value, color = Category))+
   geom_line(size =1) +
@@ -327,7 +330,7 @@ plot_fundraising <- ggplot(fundraising_long, aes(x = EventYear, y =Median_value,
     color = "Category"
   ) +
   scale_color_discrete(labels=c("2+ year Rider", "3+ Year Rider", "All Riders"))+
-  theme_few()
+  theme_linedraw()
 
 plot_fundraising
 
@@ -338,22 +341,13 @@ Amount_fundraised_YR <- Amount_fundraised_YR %>% left_join(Num_riders_per_year, 
 riders<- ggplot(Amount_fundraised_YR, aes(x = EventYear, y =riders )) +
   geom_bar(stat = "identity", fill = "skyblue")+
   labs(x = "Year", y = "Riders", title = "Number of Riders Each Year")+
-  theme_few()
+  theme_linedraw()
 
 fundraising <- ggplot(Amount_fundraised_YR, aes(x= EventYear )) +
   geom_line(aes(y =total_amount_collected), size = 1) +
   scale_y_continuous(labels = dollar)+
-  labs(x = "Year", y = "Amount Raised", title = "Total Raised Each Year" )
-  
-fundraising
+  labs(x = "Year", y = "Amount Raised", title = "Total Raised Each Year" )+
+  theme_linedraw()
 
-riders
-  
-riders + inset_element(fundraising,
-                       left = 0.4,
-                       bottom = 0.4,
-                       right = unit(1, "npc") - unit(15, "mm"),
-                       top = unit(1, "npc") - unit(14, "mm"), 
-                       align_to = "full")
-
-
+#Plots 
+fundraising + riders

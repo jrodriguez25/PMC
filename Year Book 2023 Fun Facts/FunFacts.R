@@ -1,7 +1,7 @@
 library(tidyverse)
 library(readxl)
 
-tblMain <- read_excel("~/Desktop/PMC Github/median_mean_info/tblMain.xlsx")
+tblHistory <- read_excel("~/Desktop/PMC Github/median_mean_info/tblMain.xlsx")
 
 tblMain2023 <- read_excel("Desktop/PMC Github/Year Book 2023 Fun Facts/tblMain2023.xlsx")
 
@@ -12,7 +12,7 @@ tblMain2023 <- tblMain2023 %>%
 
 # First Year Riders -------------------------------------------------------
 
-first_year_riders <- tblMain %>% 
+first_year_riders <- tblHistory %>% 
   filter(Participant == 1) %>% 
   filter(EventName == "PMC") %>% 
   group_by(Main_ID) %>% 
@@ -26,7 +26,7 @@ n_first_year_riders <- first_year_riders %>%
 # First Year Volunteers ---------------------------------------------------
 
 
-first_year_volunteers <- tblMain %>% 
+first_year_volunteers <- tblHistory %>% 
   filter(Volunteer == 1) %>% 
   filter(EventName == "PMC") %>% 
   group_by(Main_ID) %>% 
@@ -39,9 +39,9 @@ n_first_year_vol <- first_year_volunteers %>%
 
 # Rode every year ---------------------------------------------------------
 
-total_years <- n_distinct(tblMain$EventYear)
+total_years <- n_distinct(tblHistory$EventYear)
 
-every_year <- tblMain %>% 
+every_year <- tblHistory %>% 
   filter(Participant == 1) %>% 
   group_by(Main_ID) %>% 
   summarize(distinct_years = n_distinct(EventYear)) %>% 
@@ -52,7 +52,7 @@ every_year <- tblMain %>%
 
 # Truly Every Year --------------------------------------------------------
 
-truly_every_year <- tblMain %>% 
+truly_every_year <- tblHistory %>% 
   filter(Participant == 1) %>% 
   filter(Virtual == 0) %>% 
   group_by(Main_ID) %>% 
@@ -63,7 +63,7 @@ truly_every_year <- tblMain %>%
 
 # Heavy Hitters -----------------------------------------------------------
 
-heavy_hitters <- tblMain %>% 
+heavy_hitters <- tblHistory %>% 
   filter(EventYear == 2023) %>% 
   filter(Raised >=10000)
 
@@ -75,13 +75,13 @@ classic_riders <- Rider_Route_Info %>%
 
 # rode PMC and Unpaved ----------------------------------------------------
 
-rode_pmc <- tblMain %>%
+rode_pmc <- tblHistory %>%
   filter(Participant == 1) %>% 
   filter(EventYear == 2023) %>% 
   filter(EventName == "PMC") %>% 
   select(Main_ID)
 
-rode_unpaved <- tblMain %>% 
+rode_unpaved <- tblHistory %>% 
   filter(Participant == 1) %>% 
   filter(EventYear == 2023) %>% 
   filter(EventName == "Unpaved") %>% 
@@ -93,7 +93,7 @@ rode_both <- rode_unpaved %>% inner_join(rode_pmc, by= "Main_ID")
 
 # Longest Serving Volunteer -----------------------------------------------
 
-longest_serving_vols <- tblMain %>% 
+longest_serving_vols <- tblHistory %>% 
   filter(Volunteer == 1) %>% 
   group_by(Main_ID) %>% 
   summarize(times = n())
