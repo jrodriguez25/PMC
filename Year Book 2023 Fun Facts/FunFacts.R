@@ -1,14 +1,13 @@
 library(tidyverse)
 library(readxl)
 
-tblHistory <- read_excel("~/Desktop/PMC Github/median_mean_info/tblMain.xlsx")
+tblHistory <- read_excel("~/Desktop/PMC Github/median_mean_info/tblHistory.xlsx")
 
 tblMain2023 <- read_excel("~/Desktop/PMC Github/Year Book 2023 Fun Facts/tblMain2023.xlsx")
 
 # merge egiftID and Main --------------------------------------------------
 
-tblMain2023 <- tblMain2023 %>% 
-  select(Main_ID, eGiftID)
+
 
 # First Year Riders -------------------------------------------------------
 
@@ -101,6 +100,159 @@ longest_serving_vols <- tblHistory %>%
 
 
 
+# Number of Cyclist -------------------------------------------------------
+
+Num_Riders_2023 <- tblHistory %>% 
+  filter(Participant == 1) %>% 
+  filter(EventName == "PMC") %>% 
+  filter(EventYear == 2023) %>% 
+  filter(Virtual == 0)%>% 
+  select(Main_ID) %>% 
+  distinct()
+
+##6154 Off the Line Not Virtual##
 
 
+
+# Num Volunteers 2023 -----------------------------------------------------
+
+Num_Vols_2023 <- tblHistory %>% 
+  filter(Volunteer == 1) %>% 
+  filter(EventName == "PMC") %>% 
+  filter(EventYear == 2023) %>% 
+  select(Main_ID) %>% 
+  distinct()
+
+#2982
+
+
+
+# Percent Male/Female -----------------------------------------------------
+
+Riders_2023 <- tblHistory %>% 
+  filter(EventYear == 2023) %>% 
+  filter(Participant == 1) %>% 
+  filter(EventName == "PMC")
+
+
+Male_Female <- tblMain2023 %>% 
+  select(Main_ID, Gender)
+
+Male_Female <- Riders_2023 %>% 
+  left_join(Male_Female, by = "Main_ID")
+
+#Calculation for percentages
+
+Male_Female %>% 
+  filter(Gender == "M" | Gender == "F") %>% 
+  group_by(Gender) %>% 
+  summarize(count= n()) %>% 
+  mutate(pct = (count/sum(count)) *100) %>% 
+  arrange(desc(pct))
+
+
+
+# Average Age -------------------------------------------------------------
+
+Main_ID_DOB <- tblMain2023 %>% 
+  select(Main_ID, DOB) %>% 
+  mutate(DOB = as.Date(DOB)) %>% 
+  mutate(Age = floor(interval(DOB, Sys.Date())/years(1)))
+
+#check for outliers
+current_date <- Sys.Date()
+
+Main_ID_DOB <- Main_ID_DOB %>%
+  rowwise() %>%
+  mutate(Age = as.numeric(difftime(current_date, DOB, units = "weeks")/52.25),
+         Outlier = ifelse(Age > 120 | DOB > current_date, "Yes", "No")) %>%
+  ungroup()  
+
+#count outliers
+
+Main_ID_DOB %>% 
+  filter(Outlier == "Yes") %>% 
+  nrow()
+
+#53 outliers
+
+Main_ID_DOB %>% 
+  filter(Outlier == "No") %>% 
+  filter(Age>13) %>% 
+  mutate(Age = round(Age, 0)) %>% 
+  summarize(mean = mean(Age))
+
+# Increments of Riders ----------------------------------------------------
+
+#40, 30, 20, 10
+
+
+tblHistory_enhanced <- tblHistory %>% 
+  left_join(first_year_riders, by = "Main_ID")
+
+Num_Years_Riding_2023 <- tblHistory_enhanced %>% 
+  mutate(Years_Riding = 2023-First_Year+1) %>% 
+  mutate(Riding_Group = case_when(
+    Years_Riding >= 40 ~ "40+",
+    Years_Riding >= 30 ~ "30+",
+    Years_Riding >= 20 ~ "20+",
+    Years_Riding >= 10 ~ "10+",
+    TRUE ~ "Less than 10"
+  )) %>% 
+  filter(EventYear == 2023) %>% 
+  filter(EventName == "PMC") %>% 
+  filter(Participant == 1)
+
+#Calculation
+count(Num_Years_Riding_2023, Riding_Group) %>% 
+  arrange(desc(Riding_Group))
+
+
+
+# By State ----------------------------------------------------------------
+
+
+         
+#From MA, Other NE States, 42 Remaining, Country
+
+us_states <- c("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE", "FL", "GA",
+               "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+               "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+               "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+               "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY")
+
+new_england_states <- c("CT",  
+                        "ME",  
+                        "MA", 
+                        "NH",  
+                        "RI",  
+                        "VT")  
+
+
+Main_ID_State <- tblMain2023 %>% 
+  select(Main_ID, Address1, Address2, State, CountryCode, City) %>% 
+  mutate(State = toupper(State)) %>% 
+  filter(!(State == "NULL" & CountryCode == "NULL" & City == "NULL")) %>% 
+  filter((State %in% us_states))
+
+showedup_non_us_ <- Main_ID_State %>% 
+  filter(!(State %in% us_states)) %>%
+  distinct()
+
+unique_states <- 
+  Main_ID_State %>% 
+  select(State) %>% 
+  distinct()
+
+Riders <- tblHistory_enhanced %>% 
+  filter(EventYear == 2023) %>% 
+  filter(Participant == 1) %>% 
+  filter(EventName == "PMC")
+
+MainID_State2023 <- Riders %>% 
+  left_join(Main_ID_State, by = "Main_ID") %>% 
+  select(Main_ID, Address1, Address2, State, CountryCode, City) %>% 
+  filter(City != "Amsterdam") %>% 
+  filter()
   
+
