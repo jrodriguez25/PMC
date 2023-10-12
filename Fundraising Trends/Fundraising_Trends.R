@@ -4,9 +4,13 @@ library(ggthemes)
 library(ggplot2)
 library(patchwork)
 library(scales)
+library(openxlsx)
 
 
 tblMain <- read_excel("~/Desktop/PMC Github/median_mean_info/tblHistory.xlsx")
+
+tblHistory <- read_excel("Desktop/PMC Github/Year Book 2023 Fun Facts/tblMain2023.xlsx")
+
 
 
 
@@ -214,12 +218,46 @@ Num_riders_per_year <- tblMain %>%
   group_by(EventYear) %>% 
   summarize(riders =n())
 
+write.xlsx(Num_riders_per_year, "Number_Riders_Per_Year.xlsx")
+
 Amount_fundraised_YR <- tblMain %>% 
   filter(Participant == 1) %>% 
   filter(EventName == "PMC") %>% 
   group_by(EventYear) %>% 
   summarize(total_amount_collected = sum(Collected))
 
+write.xlsx(Amount_fundraised_YR, "Amount_Funraised_by_Year.xlsx")
+
+plot_fundraising <- ggplot(fundraising_long, aes(x = EventYear, y =Median_value, color = Category))+
+  geom_line(size =1) +
+  labs(
+    title = "Comparison of Median Fundraised across Categories",
+    x = "Event Year",
+    y = "Median Fundraised",
+    color = "Category"
+  ) +
+  scale_color_discrete(labels=c("2+ year Rider", "3+ Year Rider", "All Riders"))+
+  theme_linedraw()
+
+plot_fundraising
+
+#Comparison of Number of Riders and Total Fundraised
+
+Amount_fundraised_YR <- Amount_fundraised_YR %>% left_join(Num_riders_per_year, by = "EventYear")
+
+riders<- ggplot(Amount_fundraised_YR, aes(x = EventYear, y =riders )) +
+  geom_bar(stat = "identity", fill = "skyblue")+
+  labs(x = "Year", y = "Riders", title = "Number of Riders Each Year")+
+  theme_linedraw()
+
+fundraising <- ggplot(Amount_fundraised_YR, aes(x= EventYear )) +
+  geom_line(aes(y =total_amount_collected), size = 1) +
+  scale_y_continuous(labels = dollar)+
+  labs(x = "Year", y = "Amount Raised", title = "Total Raised Each Year" )+
+  theme_linedraw()
+
+#Plots 
+fundraising + riders
 
 
 
@@ -232,14 +270,13 @@ pct_above_minimum <- tblMain %>%
   select(Main_ID, EventYear, Collected,Raised, MinFund, Commitment) %>% 
   mutate(pct_above_raised = ((Raised-Commitment)/ Commitment) *100)
 
+pct_above_minimum <- pct_above_minimum%>%   
+  mutate(pct_above_raised = case_when(
+  MinFund == 0 & Commitment == 0 ~ NA,
+  MinFund != 0 & Commitment == 0 ~ ((Raised-MinFund)/ MinFund) *100))
 
-#Need to clean this more
-stats_pct_above_minimum <- pct_above_minimum %>% 
-  group_by(EventYear) %>%
-  summarise(
-    average_percent_abv_raised = mean(pct_above_raised, na.rm = TRUE),
-    median_percent_abv_raised = median(pct_above_raised, na.rm = TRUE)
-  )
+write
+
 
 #Maybe start thinking of certain routes and certain cohorts of riders
 
@@ -251,6 +288,7 @@ mark_OnD <- tblMain %>%
   ungroup() %>% 
   mutate(One_Timer = ifelse(appear_count == 1, "Yes", "No")) %>% 
   select(Main_ID, EventYear, Collected, Raised, MinFund, Commitment, One_Timer)
+
 
 
 pct_above_minimum <-bind_rows(pct_above_minimum,  mark_OnD)
@@ -270,6 +308,9 @@ One_and_Dones <-tblMain %>%
   filter(n() == 1) %>% 
   group_by(EventYear) %>% 
   summarize(count =n())
+
+write.xlsx(One_and_Dones, "One and Dones Graph.xlsx")
+
 
 OnD_graph <- ggplot(One_and_Dones, aes(x = EventYear, y= count))+
   geom_bar(stat = "identity", fill = 'darkred') +theme_linedraw() +
@@ -321,33 +362,4 @@ summary(model)
 
 
 
-plot_fundraising <- ggplot(fundraising_long, aes(x = EventYear, y =Median_value, color = Category))+
-  geom_line(size =1) +
-  labs(
-    title = "Comparison of Median Fundraised across Categories",
-    x = "Event Year",
-    y = "Median Fundraised",
-    color = "Category"
-  ) +
-  scale_color_discrete(labels=c("2+ year Rider", "3+ Year Rider", "All Riders"))+
-  theme_linedraw()
 
-plot_fundraising
-
-#Comparison of Number of Riders and Total Fundraised
-
-Amount_fundraised_YR <- Amount_fundraised_YR %>% left_join(Num_riders_per_year, by = "EventYear")
-
-riders<- ggplot(Amount_fundraised_YR, aes(x = EventYear, y =riders )) +
-  geom_bar(stat = "identity", fill = "skyblue")+
-  labs(x = "Year", y = "Riders", title = "Number of Riders Each Year")+
-  theme_linedraw()
-
-fundraising <- ggplot(Amount_fundraised_YR, aes(x= EventYear )) +
-  geom_line(aes(y =total_amount_collected), size = 1) +
-  scale_y_continuous(labels = dollar)+
-  labs(x = "Year", y = "Amount Raised", title = "Total Raised Each Year" )+
-  theme_linedraw()
-
-#Plots 
-fundraising + riders

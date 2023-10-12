@@ -3,7 +3,7 @@ library(readxl)
 
 tblHistory <- read_excel("~/Desktop/PMC Github/median_mean_info/tblMain.xlsx")
 
-tblMain2023 <- read_excel("Desktop/PMC Github/Year Book 2023 Fun Facts/tblMain2023.xlsx")
+tblMain2023 <- read_excel("~/Desktop/PMC Github/Year Book 2023 Fun Facts/tblMain2023.xlsx")
 
 # merge egiftID and Main --------------------------------------------------
 
@@ -23,7 +23,7 @@ n_first_year_riders <- first_year_riders %>%
   tally()
 
 
-# First Year Volunteers ---------------------------------------------------
+rd# First Year Volunteers ---------------------------------------------------
 
 
 first_year_volunteers <- tblHistory %>% 
@@ -97,6 +97,10 @@ longest_serving_vols <- tblHistory %>%
   filter(Volunteer == 1) %>% 
   group_by(Main_ID) %>% 
   summarize(times = n())
+
+
+
+
 
 
   
