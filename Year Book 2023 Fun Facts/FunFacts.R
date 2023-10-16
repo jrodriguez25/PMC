@@ -1,11 +1,90 @@
 library(tidyverse)
 library(readxl)
 
+
+# Load Data ---------------------------------------------------------------
+
+
 tblHistory <- read_excel("~/Desktop/PMC Github/median_mean_info/tblHistory.xlsx")
 
-tblMain2023 <- read_excel("~/Desktop/PMC Github/Year Book 2023 Fun Facts/tblMain2023.xlsx")
 
-# merge egiftID and Main --------------------------------------------------
+
+tblMain2023 <- read_excel("Desktop/PMC Github/Year Book 2023 Fun Facts/tblMain2023.xlsx", 
+                          col_types = c("text", "text", "numeric", 
+                                        "text", "text", "numeric", "numeric", 
+                                        "numeric", "numeric", "numeric", 
+                                        "numeric", "numeric", "text", "numeric", 
+                                        "text", "text", "text", "text", "text", 
+                                        "text", "date", "text", "text", "text", 
+                                        "text", "text", "text", "text", "text", 
+                                        "text", "text", "text", "text", "text", 
+                                        "text", "text", "text", "text", "text", 
+                                        "text", "text", "text", "text", "text", 
+                                        "text", "text", "text", "text", "text", 
+                                        "text", "text", "text", "text", "text", 
+                                        "text", "text", "text", "text", "text", 
+                                        "text", "text", "text", "text", "text", 
+                                        "numeric", "numeric", "numeric", 
+                                        "numeric", "numeric", "text", "numeric", 
+                                        "numeric", "numeric", "text", "text", 
+                                        "text", "text", "text", "numeric", 
+                                        "numeric", "numeric", "numeric", 
+                                        "text", "text", "text", "text", "text", 
+                                        "text", "text", "text", "text", "text", 
+                                        "text", "text", "text", "text", "text", 
+                                        "numeric", "numeric", "numeric", 
+                                        "numeric", "numeric", "numeric", 
+                                        "numeric", "numeric", "numeric", 
+                                        "numeric", "text", "text", "text", 
+                                        "text", "text", "text", "text", "text", 
+                                        "text", "text", "numeric", "text", 
+                                        "text", "text", "text", "text", "text", 
+                                        "text", "text", "text", "text", "text", 
+                                        "text", "numeric", "numeric", "numeric", 
+                                        "numeric", "numeric", "numeric", 
+                                        "numeric", "numeric", "numeric", 
+                                        "numeric", "text", "text", "text", 
+                                        "text", "text", "text"))
+
+Rider_Route_Info <- read_excel("Desktop/PMC Github/Tracking Data/data/Rider Route Info.xlsx")
+
+
+
+
+
+
+# Reimagined Riders 2023 IDS ----------------------------------------------
+
+EGIFT_ID_Route2023<- Rider_Route_Info %>% 
+  distinct(eGiftID , .keep_all = TRUE) %>% 
+  filter(`2023 Route...11` == "Virtual Ride" | `2023 Route...11` == "Reimagined"| `2023 Route...11` == "Reimagined Teen") %>% 
+  select(eGiftID, `2023 Route...11`)
+ 
+
+Reimagined_ReTeen_Virt_Main_ID <- EGIFT_ID_Route2023 %>% left_join(tblMain2023, by = "eGiftID")
+
+Exclude_MainIDs <- Reimagined_ReTeen_Virt_Main_ID$Main_ID
+
+
+# MasterTable -------------------------------------------------------------
+
+tblHistory2023 <- tblHistory %>% 
+  filter(EventYear == 2023)
+
+master <- tblHistory2023 %>% left_join(tblMain2023, by = "Main_ID") %>% 
+  select(-Participant.y, Volunteer.y, )
+
+
+# PMC Riders --------------------------------------------------------------
+
+All_Riders_2023 <- tblHistory %>% 
+  filter(EventName == "PMC") %>% 
+  filter(EventYear == 2023) %>% 
+  filter(Participant == 1) %>% 
+  filter(!(Main_ID %in% Exclude_MainIDs))
+
+
+
 
 
 
@@ -156,7 +235,7 @@ Male_Female %>%
 
 Main_ID_DOB <- tblMain2023 %>% 
   select(Main_ID, DOB) %>% 
-  mutate(DOB = as.Date(DOB)) %>% 
+ # mutate(DOB = as.Date(DOB)) %>% 
   mutate(Age = floor(interval(DOB, Sys.Date())/years(1)))
 
 #check for outliers
@@ -165,7 +244,7 @@ current_date <- Sys.Date()
 Main_ID_DOB <- Main_ID_DOB %>%
   rowwise() %>%
   mutate(Age = as.numeric(difftime(current_date, DOB, units = "weeks")/52.25),
-         Outlier = ifelse(Age > 120 | DOB > current_date, "Yes", "No")) %>%
+         Outlier = ifelse(Age > 100 | DOB > current_date, "Yes", "No")) %>%
   ungroup()  
 
 #count outliers
@@ -176,11 +255,17 @@ Main_ID_DOB %>%
 
 #53 outliers
 
-Main_ID_DOB %>% 
+
+Average_Age_PMC <- tblHistory %>% 
+  left_join(Main_ID_DOB, by = "Main_ID") %>% 
+  filter(Participant == 1) %>% 
+  filter(EventName == "PMC") %>% 
+  filter(EventYear == 2023) %>% 
   filter(Outlier == "No") %>% 
   filter(Age>13) %>% 
   mutate(Age = round(Age, 0)) %>% 
   summarize(mean = mean(Age))
+
 
 # Increments of Riders ----------------------------------------------------
 
@@ -222,8 +307,7 @@ us_states <- c("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE", "FL", "GA",
                "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY")
 
 new_england_states <- c("CT",  
-                        "ME",  
-                        "MA", 
+                        "ME", 
                         "NH",  
                         "RI",  
                         "VT")  
@@ -253,6 +337,80 @@ MainID_State2023 <- Riders %>%
   left_join(Main_ID_State, by = "Main_ID") %>% 
   select(Main_ID, Address1, Address2, State, CountryCode, City) %>% 
   filter(City != "Amsterdam") %>% 
-  filter()
+  mutate(New_England = if_else(State %in% new_england_states, "yes", "no")) %>% 
+  mutate(New_England = if_else(State == "MA", "MA", New_England))
+
+#calculate for percentage
+
+MainID_State2023 %>% 
+  group_by(New_England) %>% 
+  summarize(count= n()) %>% 
+  mutate(pct = (count/sum(count)) *100) %>% 
+  arrange(desc(pct))
+
+
+# Number of Donors  -------------------------------------------------------
+
+check query from email 
+
+
+# Average Donation --------------------------------------------------------
+
+
+
+
+
+# Winter Cycle Questions --------------------------------------------------
+
+
+
+
+
+# Average Age -------------------------------------------------------------
+
+WinterCycle <- tblHistory %>% 
+  filter(EventName == "Winter-Cycle-Boston") %>% 
+  filter(EventYear == 2023) %>% 
+  filter (Participant == 1) %>% 
+  filter(!(Fundraiser == 0 &NonFund == 0.00 & Collected == 0 & Raised == 0 & MinFund == 0 & Commitment == 0))
+
+Average_AgeWinterCycle <- tblHistory %>%
+  left_join(Main_ID_DOB, by = "Main_ID") %>%
+  filter(EventName == "Winter-Cycle-Boston") %>% 
+  filter(EventYear == 2023) %>% 
+  filter (Participant == 1) %>% 
+  filter(!(Fundraiser == 0 &NonFund == 0.00 & Collected == 0 & Raised == 0 & MinFund == 0 & Commitment == 0)) %>%
+  mutate(Age = round(Age, 0)) %>% 
+  summarize(mean = mean(Age))
+  
+  
+  
+
+# Average Rider Donation --------------------------------------------------
+
+
+unique(Rider_Route_Info$`2023 Route...11`)
+
+EGIFT_ID_Route2023<- Rider_Route_Info %>% 
+  filter(`2023 Route...11` == "Virtual Ride" | `2023 Route...11` == "Reimagined"| `2023 Route...11` == "Reimagined Teen") %>% 
+  select(eGiftID, `2023 Route...11`) %>% 
+  distinct(eGiftID , .keep_all = TRUE)
+
+Reimagined_ReTeen_Virt_Main_ID <- EGIFT_ID_Route2023 %>% left_join(tblMain2023, by = "eGiftID")
+
+Exclude_MainIDs <- Reimagined_ReTeen_Virt_Main_ID$Main_ID
+
+Average_Rider_Donation <- tblHistory %>% 
+  filter(EventYear == 2023) %>% 
+  filter(EventName == "PMC") %>% 
+  filter(Participant == 1) %>%
+  select(Main_ID, Raised) %>%
+  filter(Raised > 0) %>% 
+  filter(!(Main_ID %in% Exclude_MainIDs)) %>% 
+  distinct(Main_ID, .keep_all = TRUE) %>% 
+  summarize(mean = mean(Raised))
+  
+
+
   
 
