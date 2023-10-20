@@ -1,6 +1,6 @@
 library(tidyverse)
 library(readxl)
-
+library(lubridate)
 
 # Load Data ---------------------------------------------------------------
 
@@ -349,6 +349,141 @@ MainID_State2023 %>%
   arrange(desc(pct))
 
 
+x
+
+# Countries Riders are From ----------------------------------------------
+
+
+Riders_2023 <- tblHistory %>% 
+  filter(EventYear == 2023) %>% 
+  filter(EventName == "PMC") %>% 
+  filter(Participant == 1) %>% 
+  filter(Virtual == 0)
+
+
+
+
+
+address_info <- tblMain2023 %>% 
+  select(Main_ID, eGiftID, CountryCode, Address1, City, State)
+
+#calculate
+
+Riders_2023_Country <- Riders_2023 %>% 
+  left_join(address_info, by= "Main_ID") %>% 
+  select(CountryCode) %>% 
+  distinct()
+  
+#GOOD#
+
+# Riders From MA ----------------------------------------------------------
+new_england_states <- c("CT",  
+                        "ME", 
+                        "NH",  
+                        "RI",  
+                        "VT")  
+
+
+Riders_2023_MA <- Riders_2023 %>% 
+  left_join(address_info, by = "Main_ID") %>% 
+  filter(City != "Amsterdam") %>% 
+  select(State) %>% 
+  group_by(State) %>% 
+  summarise(Count = n()) %>%
+  mutate(Percentage = (Count / sum(Count)) * 100,
+         In_New_England = if_else(State %in% new_england_states, "Yes", "No"))
+
+
+ne_percentage <- Riders_2023_MA %>% 
+  filter(In_New_England == "Yes") %>% 
+  summarize(Total_Percentage = sum(Percentage))
+  
+#GOOD#
+
+# Gender ------------------------------------------------------------------
+gender_info <- tblMain2023 %>% 
+  select(Main_ID, eGiftID, Gender)
+
+Gender_2023 <- Riders_2023 %>% 
+  left_join(gender_info, by = "Main_ID") %>% 
+  select(Main_ID, Gender) %>% 
+  group_by(Gender) %>% 
+  summarize(Count = n()) %>% 
+  mutate(Percentage = ((Count/ sum(Count)) *100))
+
+
+#GOOD#
+
+# Average Age and by Age -------------------------------------------------------------
+
+age_info <- tblMain2023 %>% 
+  select(Main_ID, eGiftID, DOB)
+
+
+Age_2023 <- Riders_2023 %>% 
+  left_join(age_info, by = "Main_ID") %>% 
+  select(Main_ID, eGiftID, DOB) %>% 
+  mutate(Age =(interval(DOB, Sys.Date()) / years(1))) %>% 
+  mutate(Age_Group = cut(Age,                                  # categorize into Age_Group
+                         breaks = c(-Inf, 19, 29, 39, 49, 59, 69, 79, Inf),
+                         labels = c("<20", "20-29", "30-39", "40-49", "50-59", "60-69", "70-79", "80+"),
+                         right = TRUE, include.lowest = TRUE)) %>%
+  group_by(Age_Group) %>%                                      # group by Age_Group
+  summarise(Count = n(), .groups = 'drop')  
+
+  
+ # summarize(Avg_Age = mean(Age))
+
+#GOOD#
+  
+
+
+
+# Num Years Ridden  -------------------------------------------------------
+
+history_Riders_2023 <- Riders_2023 %>% 
+  left_join(tblHistory, by = "Main_ID") %>% 
+  filter(EventName.y == "PMC") %>% 
+  group_by(Main_ID) %>% 
+  mutate(Main_ID_Count = n()) %>% 
+  select(Main_ID, Main_ID_Count) %>% 
+  distinct(Main_ID, Main_ID_Count) %>% 
+  mutate(Year_Interval = cut(Main_ID_Count, 
+                             breaks = c(0, 4, 9, 14, 19, 24, 29, 34, 40, 44),
+                             labels = c("1-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-40", "41-44"),
+                             right = TRUE, include.lowest = TRUE)) %>%
+  group_by(Year_Interval) %>%
+  summarise(Count = n())
+
+  #GOOD#
+
+
+
+# Number of Volunteers ----------------------------------------------------
+
+Volunteers_2023 <- tblHistory %>% 
+  filter(EventYear == 2023) %>% 
+  filter(EventName == "PMC") %>% 
+  filter(Volunteer == 1) %>% 
+  filter(Virtual == 0)
+
+
+
+# Intervals Volunteers ----------------------------------------------------
+history_Volunteers_2023 <- Volunteers_2023 %>% 
+  left_join(tblHistory, by = "Main_ID") %>% 
+  filter(EventName.y == "PMC") %>% 
+  group_by(Main_ID) %>% 
+  mutate(Main_ID_Count = n()) %>% 
+  select(Main_ID, Main_ID_Count) %>% 
+  distinct(Main_ID, Main_ID_Count) %>% 
+  mutate(Year_Interval = cut(Main_ID_Count, 
+                             breaks = c(0, 4, 9, 14, 19, 24, 29, 34, 40, 44),
+                             labels = c("1-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-40", "41-44"),
+                             right = TRUE, include.lowest = TRUE)) %>%
+  group_by(Year_Interval) %>%
+  summarise(Count = n())
+
 # Number of Donors  -------------------------------------------------------
 
 check query from email 
@@ -379,14 +514,14 @@ Average_AgeWinterCycle <- tblHistory %>%
   filter(EventName == "Winter-Cycle-Boston") %>% 
   filter(EventYear == 2023) %>% 
   filter (Participant == 1) %>% 
-  filter(!(Fundraiser == 0 &NonFund == 0.00 & Collected == 0 & Raised == 0 & MinFund == 0 & Commitment == 0)) %>%
+  filter(!(Fundraiser == 0 & NonFund == 0.00 & Collected == 0 & Raised == 0 & MinFund == 0 & Commitment == 0)) %>%
   mutate(Age = round(Age, 0)) %>% 
   summarize(mean = mean(Age))
   
   
   
 
-# Average Rider Donation --------------------------------------------------
+# Average Rider Raised --------------------------------------------------
 
 
 unique(Rider_Route_Info$`2023 Route...11`)
@@ -400,16 +535,28 @@ Reimagined_ReTeen_Virt_Main_ID <- EGIFT_ID_Route2023 %>% left_join(tblMain2023, 
 
 Exclude_MainIDs <- Reimagined_ReTeen_Virt_Main_ID$Main_ID
 
-Average_Rider_Donation <- tblHistory %>% 
+Average_Rider_Raised <- tblHistory %>% 
   filter(EventYear == 2023) %>% 
   filter(EventName == "PMC") %>% 
-  filter(Participant == 1) %>%
+  filter(Participant == 1) %>% 
+  filter(Virtual == 0) %>% 
   select(Main_ID, Raised) %>%
   filter(Raised > 0) %>% 
   filter(!(Main_ID %in% Exclude_MainIDs)) %>% 
   distinct(Main_ID, .keep_all = TRUE) %>% 
-  summarize(mean = mean(Raised))
+  summarize(mean = mean(Raised),
+            sum = sum(Raised))
   
+
+##GOOD##
+
+# Average Raised ----------------------------------------------------------
+
+
+Avg_Raised_PMC <- tblHistory %>% 
+  filter(EventYear == 2023) %>% 
+  filter(EventName == "PMC") %>% 
+  filter(Raised>0)
 
 
   
