@@ -9,7 +9,6 @@ Winter_Average_Rider_Donation <- tblHistory %>%
   filter(Participant == 1) %>% 
   select(Main_ID, Raised) %>%
   filter(Raised > 0) %>% 
-  filter(!(Main_ID %in% Exclude_MainIDs)) %>% 
   distinct(Main_ID, .keep_all = TRUE) %>% 
   summarize(mean = mean(Raised), 
             sum = sum(Raised))

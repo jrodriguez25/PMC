@@ -54,9 +54,7 @@ tblMain2023 <- read_excel("Desktop/PMC Github/Year Book 2023 Fun Facts/tblMain20
 Unpaved_Riders_2023 <- tblHistory %>% 
   filter(EventYear == 2023) %>% 
   filter(EventName == "Unpaved") %>% 
-  filter(Participant == 1) %>% 
-  filter(Virtual == 0) 
-
+  filter(Participant == 1) 
 
 # First Year Riders -------------------------------------------------------
 
@@ -72,19 +70,16 @@ Num_FY_Unpaved <- Unpaved_ALL %>%
   group_by(First_Year) %>% 
   tally()
 
-
+tblMain2023$MainType
 
 # Average Age -------------------------------------------------------------
 Main_ID_DOB <- tblMain2023 %>% 
+  filter(!(is.null(MainType))) %>% 
   select(Main_ID, DOB) %>% 
   # mutate(DOB = as.Date(DOB)) %>% 
   mutate(Age = floor(interval(DOB, Sys.Date())/years(1)))
 
 
-Unpaved<- tblHistory %>% 
-  filter(EventName == "Unpaved") %>% 
-  filter(EventYear == 2023) %>% 
-  filter (Participant == 1)
 
 
 Average_AgeUnpaved <- tblHistory %>%
@@ -121,6 +116,7 @@ Unpaved_Riders_2023 <- tblHistory %>%
   filter(Virtual == 0)
 
 Male_Female <- tblMain2023 %>% 
+  filter(!is.null(MainType)) %>% 
   select(Main_ID, Gender)
 
 Unpaved_Male_Female <- Unpaved_Riders_2023 %>% 
@@ -145,7 +141,8 @@ Average_Rider_Raised_Unpaved <- tblHistory %>%
   select(Main_ID, Raised) %>%
   filter(Raised > 0) %>%
   distinct(Main_ID, .keep_all = TRUE) %>% 
-  summarize(mean = mean(Raised))
+  summarize(mean = mean(Raised),
+            sum = sum(Raised))
 
 
 

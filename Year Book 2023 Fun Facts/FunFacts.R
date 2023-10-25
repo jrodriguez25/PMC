@@ -5,7 +5,7 @@ library(lubridate)
 # Load Data ---------------------------------------------------------------
 
 
-tblHistory <- read_excel("~/Desktop/PMC Github/median_mean_info/tblHistory.xlsx")
+tblHistory <- read_excel("~/Desktop/PMC Github/median_mean_info/tblHistory.xlsx") 
 
 
 
@@ -44,7 +44,8 @@ tblMain2023 <- read_excel("Desktop/PMC Github/Year Book 2023 Fun Facts/tblMain20
                                         "numeric", "numeric", "numeric", 
                                         "numeric", "numeric", "numeric", 
                                         "numeric", "text", "text", "text", 
-                                        "text", "text", "text"))
+                                        "text", "text", "text")) %>% 
+  filter(!is.null(MainType))
 
 Rider_Route_Info <- read_excel("Desktop/PMC Github/Tracking Data/data/Rider Route Info.xlsx")
 
@@ -169,102 +170,9 @@ rode_both <- rode_unpaved %>% inner_join(rode_pmc, by= "Main_ID")
 
 
 
-# Longest Serving Volunteer -----------------------------------------------
-
-longest_serving_vols <- tblHistory %>% 
-  filter(Volunteer == 1) %>% 
-  group_by(Main_ID) %>% 
-  summarize(times = n())
-
-
-
-
-# Number of Cyclist -------------------------------------------------------
-
-Num_Riders_2023 <- tblHistory %>% 
-  filter(Participant == 1) %>% 
-  filter(EventName == "PMC") %>% 
-  filter(EventYear == 2023) %>% 
-  filter(Virtual == 0)%>% 
-  select(Main_ID) %>% 
-  distinct()
-
-##6154 Off the Line Not Virtual##
-
-
-
-# Num Volunteers 2023 -----------------------------------------------------
-
-Num_Vols_2023 <- tblHistory %>% 
-  filter(Volunteer == 1) %>% 
-  filter(EventName == "PMC") %>% 
-  filter(EventYear == 2023) %>% 
-  select(Main_ID) %>% 
-  distinct()
-
-#2982
-
-
 
 # Percent Male/Female -----------------------------------------------------
 
-Riders_2023 <- tblHistory %>% 
-  filter(EventYear == 2023) %>% 
-  filter(Participant == 1) %>% 
-  filter(EventName == "PMC")
-
-
-Male_Female <- tblMain2023 %>% 
-  select(Main_ID, Gender)
-
-Male_Female <- Riders_2023 %>% 
-  left_join(Male_Female, by = "Main_ID")
-
-#Calculation for percentages
-
-Male_Female %>% 
-  filter(Gender == "M" | Gender == "F") %>% 
-  group_by(Gender) %>% 
-  summarize(count= n()) %>% 
-  mutate(pct = (count/sum(count)) *100) %>% 
-  arrange(desc(pct))
-
-
-
-# Average Age -------------------------------------------------------------
-
-Main_ID_DOB <- tblMain2023 %>% 
-  select(Main_ID, DOB) %>% 
- # mutate(DOB = as.Date(DOB)) %>% 
-  mutate(Age = floor(interval(DOB, Sys.Date())/years(1)))
-
-#check for outliers
-current_date <- Sys.Date()
-
-Main_ID_DOB <- Main_ID_DOB %>%
-  rowwise() %>%
-  mutate(Age = as.numeric(difftime(current_date, DOB, units = "weeks")/52.25),
-         Outlier = ifelse(Age > 100 | DOB > current_date, "Yes", "No")) %>%
-  ungroup()  
-
-#count outliers
-
-Main_ID_DOB %>% 
-  filter(Outlier == "Yes") %>% 
-  nrow()
-
-#53 outliers
-
-
-Average_Age_PMC <- tblHistory %>% 
-  left_join(Main_ID_DOB, by = "Main_ID") %>% 
-  filter(Participant == 1) %>% 
-  filter(EventName == "PMC") %>% 
-  filter(EventYear == 2023) %>% 
-  filter(Outlier == "No") %>% 
-  filter(Age>13) %>% 
-  mutate(Age = round(Age, 0)) %>% 
-  summarize(mean = mean(Age))
 
 
 # Increments of Riders ----------------------------------------------------
@@ -362,8 +270,6 @@ Riders_2023 <- tblHistory %>%
 
 
 
-
-
 address_info <- tblMain2023 %>% 
   select(Main_ID, eGiftID, CountryCode, Address1, City, State)
 
@@ -429,10 +335,32 @@ Age_2023 <- Riders_2023 %>%
                          labels = c("<20", "20-29", "30-39", "40-49", "50-59", "60-69", "70-79", "80+"),
                          right = TRUE, include.lowest = TRUE)) %>%
   group_by(Age_Group) %>%                                      # group by Age_Group
-  summarise(Count = n(), .groups = 'drop')  
+  summarise(Count = n(), .groups = 'drop')
 
-  
- # summarize(Avg_Age = mean(Age))
+Main_ID_DOB <- tblMain2023 %>% 
+  select(Main_ID, DOB) %>% 
+  # mutate(DOB = as.Date(DOB)) %>% 
+  mutate(Age = floor(interval(DOB, Sys.Date())/years(1)))
+
+#check for outliers
+current_date <- Sys.Date()
+
+Main_ID_DOB <- Main_ID_DOB %>%
+  rowwise() %>%
+  mutate(Age = as.numeric(difftime(current_date, DOB, units = "weeks")/52.25),
+         Outlier = ifelse(Age > 100 | DOB > current_date, "Yes", "No")) %>%
+  ungroup()  
+
+
+Average_AgePMC <- tblHistory %>%
+  left_join(Main_ID_DOB, by = "Main_ID") %>%
+  filter(EventName == "PMC") %>% 
+  filter(EventYear == 2023) %>% 
+  filter (Participant == 1) %>% 
+  mutate(Age = round(Age, 0)) %>% 
+  summarize(mean = mean(Age, na.rm = TRUE))
+
+
 
 #GOOD#
   
@@ -549,14 +477,6 @@ Average_Rider_Raised <- tblHistory %>%
   
 
 ##GOOD##
-
-# Average Raised ----------------------------------------------------------
-
-
-Avg_Raised_PMC <- tblHistory %>% 
-  filter(EventYear == 2023) %>% 
-  filter(EventName == "PMC") %>% 
-  filter(Raised>0)
 
 
   
