@@ -7,7 +7,7 @@ library(scales)
 library(openxlsx)
 
 
-tblMain <- read_excel("~/Desktop/PMC Github/median_mean_info/tblHistory.xlsx")
+tblMain <- read_excel("Desktop/PMC Github/Year Book 2023 Fun Facts/tblHistory.xlsx")
 
 tblHistory <- read_excel("Desktop/PMC Github/Year Book 2023 Fun Facts/tblMain2023.xlsx")
 
