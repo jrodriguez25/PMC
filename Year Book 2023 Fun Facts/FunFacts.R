@@ -393,6 +393,7 @@ Volunteers_2023 <- tblHistory %>%
   filter(EventYear == 2023) %>% 
   filter(EventName == "PMC") %>% 
   filter(Volunteer == 1) %>% 
+  filter(MainType == NULL) %>% 
   filter(Virtual == 0)
 
 
