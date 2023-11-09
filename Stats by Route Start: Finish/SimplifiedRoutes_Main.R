@@ -182,6 +182,14 @@ aggregate_virtual <- merged_data %>%
 
 final_table <- bind_rows(aggregate_start_routes, aggregate_finish_routes, aggregated_saturday, aggregated_reimagined, aggregate_virtual)
 
+
+# Regression_Tests --------------------------------------------------------
+
+model <- lm(`Average Raised`~ ., data = final_table)
+
+summary(model)
 # write Final table -------------------------------------------------------
 
 write_xlsx(final_table,"Desktop/PMC Github/RiderReg23/StatsBySimplifiedRoute2.xlsx" )
+
+
