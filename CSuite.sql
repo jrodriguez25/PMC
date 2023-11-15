@@ -47,4 +47,3 @@ WHERE m.Title IN ('COO', 'CFO', 'CEO') or
 AND h.EventYear = 2023
 GROUP BY m.Main_ID, m.eGiftID, m.FirstName, m.LastName, m.CompanyName, m.Title, m.Phone_Cell, m.Phone_Home, m.EMail
 ORDER BY m.Main_ID;
-
