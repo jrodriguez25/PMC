@@ -74,4 +74,3 @@ select AVG(Amount) from tblDonation
 WHERE EventYear = convert(int,dbo.fn_CharCurrentYear()) 
 
 select * from tblDonation
-
