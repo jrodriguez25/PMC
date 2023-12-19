@@ -190,6 +190,6 @@ model <- lm(`Average Raised`~ ., data = final_table)
 summary(model)
 # write Final table -------------------------------------------------------
 
-write_xlsx(final_table,"Desktop/PMC Github/RiderReg23/StatsBySimplifiedRoute2.xlsx" )
+write_xlsx(final_table,"Desktop/PMC Github/RiderReg23/StatsBySimplifiedRoute.xlsx" )
 
 
